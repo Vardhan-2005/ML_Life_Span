@@ -231,14 +231,14 @@ function Dashboard({ user, onLogout }) {
                           }}>
                             {report.health_label}
                           </span>
-                        ) : —}
+                        ) : null}
                       </td>
                       <td>
                         {report.days_remaining != null ? (
                           <span style={{ fontWeight: 600, color: report.days_remaining < 14 ? '#ef4444' : report.days_remaining < 45 ? '#f59e0b' : '#10b981' }}>
                             {report.days_remaining}d
                           </span>
-                        ) : —}
+                        ) : null}
                       </td>
                       <td>
                         <Link to={`/report/${report.id}`} className="view-button">
