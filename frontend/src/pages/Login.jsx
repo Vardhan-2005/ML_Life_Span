@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-axios.defaults.withCredentials = true;
+import api from "../api/api"
 import '../styles/Auth.css';
 
 function Login({ onLogin }) {
@@ -27,7 +26,7 @@ function Login({ onLogin }) {
     setError('');
 
     try {
-      const response = await axios.post('/api/login', formData);
+      const response = await api.post('/api/login', formData);
       onLogin(response.data.user);
       navigate('/dashboard');
     } catch (err) {

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
-axios.defaults.withCredentials = true;
+import api from "../api/api"
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import Navbar from '../components/Navbar';
@@ -22,7 +21,7 @@ function DetailedReport({ user, onLogout }) {
   const fetchReport = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/get-report/${reportId}`);
+      const response = await api.get(`/api/get-report/${reportId}`);
       setReport(response.data.report);
     } catch (err) {
       setError('Failed to load report');

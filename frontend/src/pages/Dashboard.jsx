@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-axios.defaults.withCredentials = true;
+import api from "../api/api"
 import Navbar from '../components/Navbar';
 import '../styles/Dashboard.css';
 
@@ -18,7 +17,7 @@ function Dashboard({ user, onLogout }) {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/get-history');
+      const response = await api.get('/api/get-history');
       setReports(response.data.reports);
     } catch (err) {
       setError('Failed to load reports');

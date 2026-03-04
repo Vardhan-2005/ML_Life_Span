@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-axios.defaults.withCredentials = true;
+import api from "../api/api"
 import '../styles/Auth.css';
 
 function Signup({ onSignup }) {
@@ -42,7 +41,7 @@ function Signup({ onSignup }) {
     }
 
     try {
-      const response = await axios.post('/api/signup', {
+      const response = await api.post('/api/signup', {
         username: formData.username,
         email: formData.email,
         password: formData.password

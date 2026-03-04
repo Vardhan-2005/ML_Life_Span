@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-axios.defaults.withCredentials = true;
+import api from "../api/api"
 import Navbar from '../components/Navbar';
 import '../styles/TestModel.css';
 
@@ -41,7 +40,7 @@ function TestModel({ user, onLogout }) {
         formData.append('files', file);
       });
 
-      const response = await axios.post('/api/upload-baseline', formData, {
+      const response = await api.post('/api/upload-baseline', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -69,7 +68,7 @@ function TestModel({ user, onLogout }) {
         formData.append('files', file);
       });
 
-      const response = await axios.post('/api/upload-current', formData, {
+      const response = await api.post('/api/upload-current', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -92,7 +91,7 @@ function TestModel({ user, onLogout }) {
     setError('');
 
     try {
-      const response = await axios.post('/api/run-drift', {
+      const response = await api.post('/api/run-drift', {
         report_name: reportName,
         baseline_files: uploadedBaseline,
         current_files: uploadedCurrent

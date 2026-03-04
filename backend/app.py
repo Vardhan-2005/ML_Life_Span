@@ -20,24 +20,33 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 ENV = os.environ.get("FLASK_ENV", "development")
 
-if ENV == "production":
-    app.config['SESSION_COOKIE_SAMESITE'] = "None"
-    app.config['SESSION_COOKIE_SECURE'] = True
-else:
-    app.config['SESSION_COOKIE_SAMESITE'] = "Lax"
-    app.config['SESSION_COOKIE_SECURE'] = False
+# --- Session cookie settings ---
+# Cross-origin cookies (React on a different domain) require SameSite=None + Secure=True.
+# On Render both frontend and backend are served over HTTPS, so this is always safe.
+app.config['SESSION_COOKIE_SAMESITE'] = "None"
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_NAME'] = "ml_lifespan_session"
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB
 
-_ALLOWED_ORIGINS = os.environ.get(
-    'ALLOWED_ORIGINS',
-    'http://localhost:3000'
-).split(',')
+# --- CORS ---
+# Always allow the production frontend. Extra origins can be appended via the
+# ALLOWED_ORIGINS env var (comma-separated) for local development.
+_PRODUCTION_ORIGIN = "https://ml-life-span-cle.onrender.com"
+_EXTRA_ORIGINS = [
+    o.strip()
+    for o in os.environ.get('ALLOWED_ORIGINS', '').split(',')
+    if o.strip()
+]
+_ALLOWED_ORIGINS = list({_PRODUCTION_ORIGIN, *_EXTRA_ORIGINS})  # deduplicated
+
 CORS(
     app,
     supports_credentials=True,
-    origins=_ALLOWED_ORIGINS
+    origins=_ALLOWED_ORIGINS,
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 )
 
 ALLOWED_EXTENSIONS = {'csv'}
