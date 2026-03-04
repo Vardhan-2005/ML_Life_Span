@@ -18,8 +18,15 @@ from ml_engine.lifespan_predictor import LifespanPredictor
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+ENV = os.environ.get("FLASK_ENV", "development")
+
+if ENV == "production":
+    app.config['SESSION_COOKIE_SAMESITE'] = "None"
+    app.config['SESSION_COOKIE_SECURE'] = True
+else:
+    app.config['SESSION_COOKIE_SAMESITE'] = "Lax"
+    app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB
 
@@ -27,7 +34,11 @@ _ALLOWED_ORIGINS = os.environ.get(
     'ALLOWED_ORIGINS',
     'http://localhost:3000'
 ).split(',')
-CORS(app, supports_credentials=True, origins=_ALLOWED_ORIGINS)
+CORS(
+    app,
+    supports_credentials=True,
+    origins=_ALLOWED_ORIGINS
+)
 
 ALLOWED_EXTENSIONS = {'csv'}
 
