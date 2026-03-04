@@ -1,0 +1,266 @@
+/* Summary Grid */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform 0.3s;
+  animation: fadeIn 0.4s ease-in;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+}
+
+.summary-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.summary-content {
+  flex: 1;
+}
+
+.summary-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Charts Grid */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.chart-card {
+  min-height: 400px;
+}
+
+.chart-container-pie {
+  height: 300px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-container-bar {
+  height: 400px;
+  padding: 20px;
+}
+
+/* Files Grid */
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.files-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.file-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.file-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface-light);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.file-badge:hover {
+  background: var(--surface);
+  border-color: var(--primary-color);
+}
+
+/* Feature Table */
+.table-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.feature-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.feature-table thead {
+  background: var(--surface-light);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.feature-table th {
+  padding: 12px 10px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.feature-table tbody tr {
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.2s;
+}
+
+.feature-table tbody tr:hover {
+  background: var(--surface-light);
+}
+
+.feature-table td {
+  padding: 14px 10px;
+  color: var(--text-primary);
+}
+
+.row-drift {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.row-warning {
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.row-ok {
+  background: transparent;
+}
+
+.p-value {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.change-positive {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.change-negative {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+/* Interpretation Grid */
+.interpretation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.interpretation-item {
+  padding: 16px;
+  background: var(--surface-light);
+  border-left: 3px solid var(--primary-color);
+  border-radius: 6px;
+}
+
+.interpretation-item h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.interpretation-item p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.interpretation-item p strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card {
+    min-height: 350px;
+  }
+
+  .chart-container-pie,
+  .chart-container-bar {
+    height: 280px;
+    padding: 10px;
+  }
+
+  .files-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .interpretation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-table {
+    font-size: 11px;
+  }
+
+  .feature-table th,
+  .feature-table td {
+    padding: 8px 6px;
+  }
+}

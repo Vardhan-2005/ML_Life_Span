@@ -1,0 +1,40 @@
+databases:
+  - name: lifespan-db
+    databaseName: lifespan
+    user: lifespan
+    plan: free
+
+services:
+  # ── Backend (Flask API) ──────────────────────────────────────────────
+  - type: web
+    name: drift-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r ../backend/requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lifespan-db
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        value: https://drift-frontend.onrender.com   # update after deploy
+
+  # ── Frontend (Vite static site) ──────────────────────────────────────
+  - type: web
+    name: drift-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://drift-backend.onrender.com   # update after deploy
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
