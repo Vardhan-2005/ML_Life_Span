@@ -8,6 +8,7 @@ function Login({ onLogin }) {
     username: '',
     password: ''
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ function Login({ onLogin }) {
 
     try {
       const response = await api.post('/api/login', formData);
-      onLogin(response.data.user);
+      onLogin(response.data.user, rememberMe);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
@@ -80,6 +81,19 @@ function Login({ onLogin }) {
               required
               autoComplete="current-password"
             />
+          </div>
+
+          <div className="remember-me-group">
+            <label className="remember-me-label">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="remember-me-checkbox"
+              />
+              <span>Remember me</span>
+            </label>
           </div>
 
           {error && <div className="error-message">{error}</div>}

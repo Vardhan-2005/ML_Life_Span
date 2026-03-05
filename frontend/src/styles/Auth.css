@@ -71,6 +71,7 @@
 /* Auth Card */
 .auth-card {
   background: rgba(30, 41, 59, 0.9);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
@@ -170,6 +171,67 @@
 
 .form-group input::placeholder {
   color: var(--text-secondary);
+}
+
+/* Remember Me */
+.remember-me-group {
+  display: flex;
+  align-items: center;
+}
+
+.remember-me-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+/* Hide the native checkbox — replace with a fully custom one */
+.remember-me-checkbox {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border: 2px solid var(--border-color, #4a5568);
+  border-radius: 4px;
+  background: var(--surface-light, #2d3748);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.remember-me-checkbox:checked {
+  background: #667eea;
+  border-color: #667eea;
+}
+
+/* Checkmark drawn with a pseudo-element — works in all Safari versions */
+.remember-me-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  -webkit-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+.remember-me-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
 }
 
 /* Error Message */
