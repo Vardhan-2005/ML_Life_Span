@@ -40,13 +40,14 @@ function TestModel({ user, onLogout }) {
         formData.append('files', file);
       });
 
-      const response = await api.post('/api/upload-baseline', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Do NOT set Content-Type manually — axios must set it automatically
+      // so it includes the multipart boundary, which the server needs to parse.
+      const response = await api.post('/api/upload-baseline', formData);
 
       setUploadedBaseline(response.data.files);
       setStep(2);
     } catch (err) {
+      if (err.response?.status === 401) { onLogout(); navigate('/login'); return; }
       setError(err.response?.data?.error || 'Failed to upload baseline files');
     } finally {
       setLoading(false);
@@ -68,13 +69,12 @@ function TestModel({ user, onLogout }) {
         formData.append('files', file);
       });
 
-      const response = await api.post('/api/upload-current', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.post('/api/upload-current', formData);
 
       setUploadedCurrent(response.data.files);
       setStep(3);
     } catch (err) {
+      if (err.response?.status === 401) { onLogout(); navigate('/login'); return; }
       setError(err.response?.data?.error || 'Failed to upload current files');
     } finally {
       setLoading(false);
@@ -100,6 +100,7 @@ function TestModel({ user, onLogout }) {
       const reportId = response.data.results.report_id;
       navigate(`/report/${reportId}`);
     } catch (err) {
+      if (err.response?.status === 401) { onLogout(); navigate('/login'); return; }
       setError(err.response?.data?.error || 'Failed to run drift detection');
     } finally {
       setLoading(false);

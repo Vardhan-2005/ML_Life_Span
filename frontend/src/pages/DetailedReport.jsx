@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from "../api/api"
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
@@ -10,26 +10,32 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 
 function DetailedReport({ user, onLogout }) {
   const { reportId } = useParams();
+  const navigate = useNavigate();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchReport();
-  }, [reportId]);
+    let cancelled = false;
 
-  const fetchReport = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get(`/api/get-report/${reportId}`);
-      setReport(response.data.report);
-    } catch (err) {
-      setError('Failed to load report');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/api/get-report/${reportId}`);
+        if (!cancelled) setReport(response.data.report);
+      } catch (err) {
+        if (cancelled) return;
+        if (err.response?.status === 401) { onLogout(); navigate('/login'); return; }
+        setError('Failed to load report');
+        console.error(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchReport();
+    return () => { cancelled = true; };
+  }, [reportId]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -181,7 +187,7 @@ function DetailedReport({ user, onLogout }) {
               📊
             </div>
             <div className="summary-content">
-              <div className="summary-value">{(report.overall_drift_score * 100).toFixed(1)}%</div>
+              <div className="summary-value">{report.overall_drift_score != null ? (report.overall_drift_score * 100).toFixed(1) : '—'}%</div>
               <div className="summary-label">Overall Drift Score</div>
             </div>
           </div>
@@ -287,8 +293,10 @@ function DetailedReport({ user, onLogout }) {
               </thead>
               <tbody>
                 {report.features.map((feature, index) => {
-                  const meanChange = feature.baseline_mean !== 0
-                    ? ((feature.current_mean - feature.baseline_mean) / feature.baseline_mean * 100)
+                  const baselineMean = feature.baseline_mean ?? 0;
+                  const currentMean  = feature.current_mean  ?? 0;
+                  const meanChange = baselineMean !== 0
+                    ? ((currentMean - baselineMean) / baselineMean * 100)
                     : 0;
 
                   return (
@@ -315,8 +323,8 @@ function DetailedReport({ user, onLogout }) {
                           </>
                         ) : 'N/A'}
                       </td>
-                      <td>{feature.baseline_mean.toFixed(4)}</td>
-                      <td>{feature.current_mean.toFixed(4)}</td>
+                      <td>{baselineMean.toFixed(4)}</td>
+                      <td>{currentMean.toFixed(4)}</td>
                       <td>
                         <span className={meanChange > 0 ? 'change-positive' : 'change-negative'}>
                           {meanChange > 0 ? '+' : ''}{meanChange.toFixed(2)}%

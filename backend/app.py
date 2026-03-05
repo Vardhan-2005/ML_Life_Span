@@ -17,7 +17,14 @@ from ml_engine.drift_detector import DriftDetector
 from ml_engine.lifespan_predictor import LifespanPredictor
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+_secret_key = os.environ.get('SECRET_KEY')
+if not _secret_key:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not set. "
+        "Sessions will be invalidated on every restart. "
+        "Add a stable SECRET_KEY in your Render environment variables."
+    )
+app.secret_key = _secret_key
 ENV = os.environ.get("FLASK_ENV", "development")
 
 # --- Session cookie settings ---
@@ -133,7 +140,8 @@ def login():
         conn.close()
 
         if user and check_password_hash(user[3], password):
-            session.permanent = True
+            remember_me = bool(data.get('remember_me', False))
+            session.permanent = remember_me
             session['user_id'] = user[0]
             session['username'] = user[1]
             return jsonify({

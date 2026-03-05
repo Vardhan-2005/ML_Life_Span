@@ -7,33 +7,35 @@ databases:
 services:
   # ── Backend (Flask API) ──────────────────────────────────────────────
   - type: web
-    name: drift-backend
+    name: ml-life-span
     runtime: python
     rootDir: backend
-    buildCommand: pip install -r ../backend/requirements.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     envVars:
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY
-        generateValue: true
+        sync: false        # Set this MANUALLY in Render dashboard — never auto-generate.
+                           # A rotating key invalidates all sessions on every deploy.
+                           # Use a long random string e.g.: openssl rand -hex 32
       - key: DATABASE_URL
         fromDatabase:
           name: lifespan-db
           property: connectionString
       - key: ALLOWED_ORIGINS
-        value: https://drift-frontend.onrender.com   # update after deploy
+        value: https://ml-life-span-cle.onrender.com
 
   # ── Frontend (Vite static site) ──────────────────────────────────────
   - type: web
-    name: drift-frontend
+    name: ml-life-span-cle
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://drift-backend.onrender.com   # update after deploy
+        value: https://ml-life-span.onrender.com
     routes:
       - type: rewrite
         source: /*

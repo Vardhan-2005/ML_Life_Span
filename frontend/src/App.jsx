@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import api from './api/api';
 import './styles/App.css'
+
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -18,11 +19,11 @@ function App() {
   }, []);
 
   const checkAuth = async () => {
-    // Check both storages for a saved login flag
-    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    const rememberMe  = localStorage.getItem('rememberMe') === 'true';
     const sessionFlag = sessionStorage.getItem('loggedIn') === 'true';
 
-    // Only attempt to restore session if a flag exists in either storage
+    // No storage flag on this device/tab → skip server call entirely.
+    // This enforces device-specific auth isolation.
     if (!rememberMe && !sessionFlag) {
       setLoading(false);
       return;
@@ -34,17 +35,24 @@ function App() {
         setIsAuthenticated(true);
         setUser(response.data.user);
       } else {
-        // Server session expired — clear stale flags
-        localStorage.removeItem('rememberMe');
-        sessionStorage.removeItem('loggedIn');
+        // Server session expired — clear stale local flags
+        clearAuthFlags();
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('rememberMe');
-      sessionStorage.removeItem('loggedIn');
+      if (error.response && error.response.status === 401) {
+        // Definitive "not authenticated" response from server
+        clearAuthFlags();
+      }
+      // Network error / server down: keep flags so we retry on next load
+      // rather than logging the user out just because of a flaky connection.
     } finally {
       setLoading(false);
     }
+  };
+
+  const clearAuthFlags = () => {
+    localStorage.removeItem('rememberMe');
+    sessionStorage.removeItem('loggedIn');
   };
 
   const handleLogin = (userData, rememberMe = false) => {
@@ -52,11 +60,9 @@ function App() {
     setUser(userData);
 
     if (rememberMe) {
-      // Persists across browser restarts on this device
       localStorage.setItem('rememberMe', 'true');
       sessionStorage.removeItem('loggedIn');
     } else {
-      // Lives only until the tab/browser is closed
       sessionStorage.setItem('loggedIn', 'true');
       localStorage.removeItem('rememberMe');
     }
@@ -70,8 +76,7 @@ function App() {
     } finally {
       setIsAuthenticated(false);
       setUser(null);
-      localStorage.removeItem('rememberMe');
-      sessionStorage.removeItem('loggedIn');
+      clearAuthFlags();
     }
   };
 
@@ -104,7 +109,9 @@ function App() {
               isAuthenticated ? (
                 <Navigate to="/dashboard" />
               ) : (
-                <Signup onSignup={handleLogin} />
+                // Signup uses rememberMe=true: user just created their account,
+                // they should stay logged in across browser restarts.
+                <Signup onSignup={(userData) => handleLogin(userData, true)} />
               )
             }
           />

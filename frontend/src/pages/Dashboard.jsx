@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from "../api/api"
 import Navbar from '../components/Navbar';
@@ -11,45 +11,52 @@ function Dashboard({ user, onLogout }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchReports();
-  }, []);
+    let cancelled = false;
 
-  const fetchReports = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/api/get-history');
-      setReports(response.data.reports);
-    } catch (err) {
-      setError('Failed to load reports');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const response = await api.get('/api/get-history');
+        if (!cancelled) {
+          setReports(response.data.reports);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        // Session expired — redirect to login instead of showing a dead error
+        if (err.response?.status === 401) {
+          onLogout();
+          navigate('/login');
+          return;
+        }
+        setError('Failed to load reports');
+        console.error(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchReports();
+
+    // Cleanup: ignore stale response if component unmounts mid-fetch
+    return () => { cancelled = true; };
+  }, []);
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'OK':
-        return '#10b981';
-      case 'Warning':
-        return '#f59e0b';
-      case 'Drift':
-        return '#ef4444';
-      default:
-        return '#6b7280';
+      case 'OK':      return '#10b981';
+      case 'Warning': return '#f59e0b';
+      case 'Drift':   return '#ef4444';
+      default:        return '#6b7280';
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'OK':
-        return '✓';
-      case 'Warning':
-        return '⚠';
-      case 'Drift':
-        return '✕';
-      default:
-        return '•';
+      case 'OK':      return '✓';
+      case 'Warning': return '⚠';
+      case 'Drift':   return '✕';
+      default:        return '•';
     }
   };
 
@@ -64,16 +71,13 @@ function Dashboard({ user, onLogout }) {
     });
   };
 
-  const calculateStats = () => {
-    const totalReports = reports.length;
-    const driftReports = reports.filter(r => r.drift_status === 'Drift').length;
-    const warningReports = reports.filter(r => r.drift_status === 'Warning').length;
-    const okReports = reports.filter(r => r.drift_status === 'OK').length;
-    
-    return { totalReports, driftReports, warningReports, okReports };
-  };
-
-  const stats = calculateStats();
+  // Memoized so it only recalculates when reports actually changes
+  const stats = useMemo(() => ({
+    totalReports:   reports.length,
+    driftReports:   reports.filter(r => r.drift_status === 'Drift').length,
+    warningReports: reports.filter(r => r.drift_status === 'Warning').length,
+    okReports:      reports.filter(r => r.drift_status === 'OK').length,
+  }), [reports]);
 
   return (
     <div className="page-container">
@@ -148,6 +152,27 @@ function Dashboard({ user, onLogout }) {
           ) : error ? (
             <div className="error-state">
               <p>{error}</p>
+              <button
+                className="primary-button"
+                style={{ marginTop: '16px' }}
+                onClick={() => {
+                  setError('');
+                  setLoading(true);
+                  api.get('/api/get-history')
+                    .then(r => setReports(r.data.reports))
+                    .catch(err => {
+                      if (err.response?.status === 401) {
+                        onLogout();
+                        navigate('/login');
+                      } else {
+                        setError('Failed to load reports');
+                      }
+                    })
+                    .finally(() => setLoading(false));
+                }}
+              >
+                Retry
+              </button>
             </div>
           ) : reports.length === 0 ? (
             <div className="empty-state">
@@ -175,78 +200,94 @@ function Dashboard({ user, onLogout }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {reports.map((report) => (
-                    <tr key={report.id}>
-                      <td>
-                        <div className="report-name">
-                          <span className="report-icon">📊</span>
-                          {report.report_name}
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          className="status-badge"
-                          style={{ backgroundColor: getStatusColor(report.drift_status) + '20', color: getStatusColor(report.drift_status) }}
-                        >
-                          {getStatusIcon(report.drift_status)} {report.drift_status}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="drift-score">
-                          <div className="score-bar">
-                            <div
-                              className="score-fill"
-                              style={{
-                                width: `${Math.min(report.overall_drift_score * 100, 100)}%`,
-                                backgroundColor: getStatusColor(report.drift_status)
-                              }}
-                            ></div>
+                  {reports.map((report) => {
+                    // Guard against null/undefined drift score
+                    const driftPct = report.overall_drift_score != null
+                      ? Math.min(report.overall_drift_score * 100, 100)
+                      : 0;
+
+                    return (
+                      <tr key={report.id}>
+                        <td>
+                          <div className="report-name">
+                            <span className="report-icon">📊</span>
+                            {report.report_name}
                           </div>
-                          <span className="score-value">
-                            {(report.overall_drift_score * 100).toFixed(1)}%
+                        </td>
+                        <td>
+                          <span
+                            className="status-badge"
+                            style={{
+                              backgroundColor: getStatusColor(report.drift_status) + '20',
+                              color: getStatusColor(report.drift_status)
+                            }}
+                          >
+                            {getStatusIcon(report.drift_status)} {report.drift_status}
                           </span>
-                        </div>
-                      </td>
-                      <td>{report.total_features}</td>
-                      <td>
-                        <span className={`feature-count ${report.drifted_features > 0 ? 'has-drift' : ''}`}>
-                          {report.drifted_features}
-                        </span>
-                      </td>
-                      <td className="date-cell">{formatDate(report.created_at)}</td>
-                      <td>
-                        {report.health_label ? (
-                          <span style={{
-                            background:
-                              report.health_label === 'Excellent' ? '#d1fae5' :
-                              report.health_label === 'Good'      ? '#dbeafe' :
-                              report.health_label === 'Fair'      ? '#fef3c7' :
-                              report.health_label === 'Poor'      ? '#ffedd5' : '#fee2e2',
-                            color:
-                              report.health_label === 'Excellent' ? '#065f46' :
-                              report.health_label === 'Good'      ? '#1e40af' :
-                              report.health_label === 'Fair'      ? '#92400e' :
-                              report.health_label === 'Poor'      ? '#9a3412' : '#991b1b',
-                            padding: '2px 10px', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600
-                          }}>
-                            {report.health_label}
+                        </td>
+                        <td>
+                          <div className="drift-score">
+                            <div className="score-bar">
+                              <div
+                                className="score-fill"
+                                style={{
+                                  width: `${driftPct}%`,
+                                  backgroundColor: getStatusColor(report.drift_status)
+                                }}
+                              ></div>
+                            </div>
+                            <span className="score-value">
+                              {driftPct.toFixed(1)}%
+                            </span>
+                          </div>
+                        </td>
+                        <td>{report.total_features}</td>
+                        <td>
+                          <span className={`feature-count ${report.drifted_features > 0 ? 'has-drift' : ''}`}>
+                            {report.drifted_features}
                           </span>
-                        ) : null}
-                      </td>
-                      <td>
-                        {report.days_remaining != null ? (
-                          <span style={{ fontWeight: 600, color: report.days_remaining < 14 ? '#ef4444' : report.days_remaining < 45 ? '#f59e0b' : '#10b981' }}>
-                            {report.days_remaining}d
-                          </span>
-                        ) : null}
-                      </td>
-                      <td>
-                        <Link to={`/report/${report.id}`} className="view-button">
-                          View Details
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="date-cell">{formatDate(report.created_at)}</td>
+                        <td>
+                          {report.health_label ? (
+                            <span style={{
+                              background:
+                                report.health_label === 'Excellent' ? '#d1fae5' :
+                                report.health_label === 'Good'      ? '#dbeafe' :
+                                report.health_label === 'Fair'      ? '#fef3c7' :
+                                report.health_label === 'Poor'      ? '#ffedd5' : '#fee2e2',
+                              color:
+                                report.health_label === 'Excellent' ? '#065f46' :
+                                report.health_label === 'Good'      ? '#1e40af' :
+                                report.health_label === 'Fair'      ? '#92400e' :
+                                report.health_label === 'Poor'      ? '#9a3412' : '#991b1b',
+                              padding: '2px 10px', borderRadius: '9999px',
+                              fontSize: '0.8rem', fontWeight: 600
+                            }}>
+                              {report.health_label}
+                            </span>
+                          ) : null}
+                        </td>
+                        <td>
+                          {report.days_remaining != null ? (
+                            <span style={{
+                              fontWeight: 600,
+                              color: report.days_remaining < 14 ? '#ef4444'
+                                   : report.days_remaining < 45 ? '#f59e0b'
+                                   : '#10b981'
+                            }}>
+                              {report.days_remaining}d
+                            </span>
+                          ) : null}
+                        </td>
+                        <td>
+                          <Link to={`/report/${report.id}`} className="view-button">
+                            View Details
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -27,7 +27,10 @@ function Login({ onLogin }) {
     setError('');
 
     try {
-      const response = await api.post('/api/login', formData);
+      const response = await api.post('/api/login', {
+        ...formData,
+        remember_me: rememberMe,
+      });
       onLogin(response.data.user, rememberMe);
       navigate('/dashboard');
     } catch (err) {

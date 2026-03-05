@@ -46,7 +46,7 @@ function Signup({ onSignup }) {
         email: formData.email,
         password: formData.password
       });
-      onSignup(response.data.user, false);
+      onSignup(response.data.user);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Signup failed. Please try again.');
